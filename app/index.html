@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NCS AI Lead Engine</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar" aria-label="Main navigation">
+        <div class="brand">
+          <div class="brand-mark">NCS</div>
+          <div>
+            <strong>Lead Engine</strong>
+            <span>AI demand discovery</span>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <a class="active" href="#dashboard">Dashboard</a>
+          <a href="#signals">Intent Signals</a>
+          <a href="#scoring">Scoring</a>
+          <a href="#exports">Exports</a>
+        </nav>
+
+        <div class="source-card">
+          <span>Primary market</span>
+          <strong>United Kingdom</strong>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">NCS London</p>
+            <h1>AI lead generation engine</h1>
+          </div>
+          <div class="actions">
+            <button class="icon-button" id="refreshButton" title="Refresh sample scoring" aria-label="Refresh sample scoring">
+              <span aria-hidden="true">↻</span>
+            </button>
+            <button class="primary-button" id="exportButton">Export CSV</button>
+          </div>
+        </header>
+
+        <section class="metrics" aria-label="Lead metrics">
+          <article>
+            <span>Qualified leads</span>
+            <strong id="qualifiedCount">0</strong>
+          </article>
+          <article>
+            <span>Average score</span>
+            <strong id="averageScore">0</strong>
+          </article>
+          <article>
+            <span>High priority</span>
+            <strong id="hotCount">0</strong>
+          </article>
+          <article>
+            <span>Tracked services</span>
+            <strong>5</strong>
+          </article>
+        </section>
+
+        <section class="workspace">
+          <div class="panel lead-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Live Queue</p>
+                <h2>Qualified company signals</h2>
+              </div>
+              <select id="serviceFilter" aria-label="Filter by service">
+                <option value="all">All services</option>
+              </select>
+            </div>
+            <div class="lead-list" id="leadList"></div>
+          </div>
+
+          <div class="panel detail-panel" id="leadDetail">
+            <div class="empty-state">Select a lead to inspect the evidence and outreach angle.</div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
+

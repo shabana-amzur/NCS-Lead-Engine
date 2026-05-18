@@ -1,0 +1,63 @@
+[
+  {
+    "company_name": "Arden Manufacturing Ltd",
+    "website": "https://arden-manufacturing.example",
+    "location": "Birmingham, United Kingdom",
+    "industry": "Manufacturing",
+    "company_size_estimate": "250-500",
+    "source_type": "job_post",
+    "source_url": "https://jobs.example/arden-azure-migration-lead",
+    "title": "Azure Migration Lead required for legacy infrastructure programme",
+    "snippet": "Arden Manufacturing is seeking an Azure Migration Lead to support a migration from legacy on-premise systems to Microsoft Azure.",
+    "published_at": "2026-05-12"
+  },
+  {
+    "company_name": "Northbank Finance Group",
+    "website": "https://northbank-finance.example",
+    "location": "London, United Kingdom",
+    "industry": "Financial Services",
+    "company_size_estimate": "500-1000",
+    "source_type": "tender",
+    "source_url": "https://tenders.example/northbank-sql-performance-support",
+    "title": "SQL Server performance and database resilience support",
+    "snippet": "The organisation is requesting database support for SQL Server performance, high availability, and disaster recovery readiness.",
+    "published_at": "2026-05-10"
+  },
+  {
+    "company_name": "Marlow Retail Systems",
+    "website": "https://marlow-retail.example",
+    "location": "Manchester, United Kingdom",
+    "industry": "Retail",
+    "company_size_estimate": "100-250",
+    "source_type": "public_web",
+    "source_url": "https://news.example/marlow-retail-bi-programme",
+    "title": "Retail group starts Power BI reporting transformation",
+    "snippet": "Marlow Retail Systems has started a reporting modernisation programme and is looking to improve Power BI dashboards across operations.",
+    "published_at": "2026-05-08"
+  },
+  {
+    "company_name": "Cavendish Care Services",
+    "website": "https://cavendish-care.example",
+    "location": "Leeds, United Kingdom",
+    "industry": "Healthcare",
+    "company_size_estimate": "250-500",
+    "source_type": "company_news",
+    "source_url": "https://press.example/cavendish-data-governance",
+    "title": "Care provider launches data governance review",
+    "snippet": "Cavendish Care Services announced a data governance and data maturity review to improve reporting, compliance, and operational insight.",
+    "published_at": "2026-05-03"
+  },
+  {
+    "company_name": "Orchid Logistics",
+    "website": "https://orchid-logistics.example",
+    "location": "London, United Kingdom",
+    "industry": "Logistics",
+    "company_size_estimate": "100-250",
+    "source_type": "job_post",
+    "source_url": "https://jobs.example/orchid-oracle-fusion-consultant",
+    "title": "Oracle Fusion ERP support consultant",
+    "snippet": "Orchid Logistics is hiring for Oracle Fusion ERP support and integration work across finance and operations systems.",
+    "published_at": "2026-04-29"
+  }
+]
+
