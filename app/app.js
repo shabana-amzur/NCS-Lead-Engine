@@ -266,7 +266,7 @@ function setStatus(message, state = "neutral") {
 async function searchLiveLeads() {
   const service = serviceFilter.value === "all" ? "Cloud Migration" : serviceFilter.value;
   refreshButton.disabled = true;
-  setStatus(`Searching live web results for ${service}...`, "loading");
+  setStatus(`Searching for public buying-intent signals for ${service}...`, "loading");
 
   try {
     const response = await fetch(`/api/search-leads?service=${encodeURIComponent(service)}`);
@@ -281,7 +281,11 @@ async function searchLiveLeads() {
     serviceFilter.value = service;
     renderLeadList();
     renderDetail();
-    setStatus(`Live Tavily search complete. ${leads.length} leads found for ${service}.`, "success");
+    if (leads.length === 0) {
+      setStatus(`No qualified buying-intent leads found for ${service}. Try another service or broaden the query later.`, "neutral");
+    } else {
+      setStatus(`Live Tavily search complete. ${leads.length} qualified need signals found for ${service}.`, "success");
+    }
   } catch (error) {
     setStatus(`Live search failed: ${error.message}`, "error");
   } finally {

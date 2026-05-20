@@ -108,6 +108,11 @@ TAVILY_API_KEY=your_tavily_key
 
 The API key is used only on the backend function and is not exposed in browser JavaScript.
 
+The live search endpoint is intentionally strict. It filters out generic articles, tutorials, and broad informational pages, and only returns results that include both:
+
+- A match to an NCS service area
+- Public buying-intent language such as tender, procurement, hiring, support required, implementation, migration project, review, assessment, or urgent issue
+
 ## Documentation
 
 - [Product Requirements](./docs/product-requirements.md)
