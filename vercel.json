@@ -1,0 +1,10 @@
+{
+  "buildCommand": "echo \"Static app - no build step required\"",
+  "outputDirectory": "app",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

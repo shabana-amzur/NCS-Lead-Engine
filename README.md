@@ -78,6 +78,10 @@ The exported file is written to:
 outputs/qualified_leads.csv
 ```
 
+### Deploy On Vercel
+
+This is a static app, not a Next.js app. The included `vercel.json` tells Vercel to skip `next build` and deploy the `app/` folder directly.
+
 ## Documentation
 
 - [Product Requirements](./docs/product-requirements.md)
