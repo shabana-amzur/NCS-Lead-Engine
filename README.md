@@ -84,6 +84,30 @@ outputs/qualified_leads.csv
 
 This is a static app, not a Next.js app. The included `vercel.json` tells Vercel to skip `next build` and deploy the `app/` folder directly.
 
+### Connect Live Tavily Search
+
+The dashboard can call a Vercel serverless function at:
+
+```text
+/api/search-leads
+```
+
+To enable live search:
+
+1. Create a Tavily account and API key.
+2. In Vercel, open the project settings.
+3. Go to **Environment Variables**.
+4. Add:
+
+```text
+TAVILY_API_KEY=your_tavily_key
+```
+
+5. Redeploy the project.
+6. Open the dashboard and click the refresh button.
+
+The API key is used only on the backend function and is not exposed in browser JavaScript.
+
 ## Documentation
 
 - [Product Requirements](./docs/product-requirements.md)

@@ -169,6 +169,35 @@ h2 {
   margin: 28px 0;
 }
 
+.status-bar {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.status-bar.loading {
+  border-color: #b9cbe2;
+  color: #315b89;
+  background: #f0f6fd;
+}
+
+.status-bar.success {
+  border-color: #b8d9cd;
+  color: var(--accent-dark);
+  background: #edf8f4;
+}
+
+.status-bar.error {
+  border-color: #e1b6b6;
+  color: var(--danger);
+  background: #fff1f1;
+}
+
 .metrics article,
 .panel {
   background: var(--surface);
@@ -302,6 +331,12 @@ select {
   place-items: center;
   color: var(--muted);
   text-align: center;
+}
+
+.empty-list {
+  padding: 24px 20px;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .detail-stack {

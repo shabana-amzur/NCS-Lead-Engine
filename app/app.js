@@ -1,4 +1,12 @@
-const leads = [
+const serviceNames = [
+  "Cloud Migration",
+  "Database Management",
+  "Power BI and Analytics",
+  "Data Maturity Assessment",
+  "Oracle Fusion ERP"
+];
+
+let leads = [
   {
     company_name: "Northbank Finance Group",
     website: "https://northbank-finance.example",
@@ -94,12 +102,12 @@ const averageScore = document.querySelector("#averageScore");
 const hotCount = document.querySelector("#hotCount");
 const exportButton = document.querySelector("#exportButton");
 const refreshButton = document.querySelector("#refreshButton");
+const statusBar = document.querySelector("#statusBar");
 
 let selectedLead = leads[0];
 
 function initFilters() {
-  const services = [...new Set(leads.map((lead) => lead.service_category))];
-  services.forEach((service) => {
+  serviceNames.forEach((service) => {
     const option = document.createElement("option");
     option.value = service;
     option.textContent = service;
@@ -116,7 +124,9 @@ function filteredLeads() {
 
 function renderMetrics(items) {
   qualifiedCount.textContent = items.length;
-  averageScore.textContent = Math.round(items.reduce((sum, lead) => sum + lead.lead_score, 0) / items.length);
+  averageScore.textContent = items.length
+    ? Math.round(items.reduce((sum, lead) => sum + lead.lead_score, 0) / items.length)
+    : 0;
   hotCount.textContent = items.filter((lead) => lead.urgency === "high").length;
 }
 
@@ -125,21 +135,27 @@ function renderLeadList() {
   renderMetrics(items);
   leadList.innerHTML = "";
 
+  if (items.length === 0) {
+    leadList.innerHTML = `<div class="empty-list">No leads found for this service yet.</div>`;
+    leadDetail.innerHTML = `<div class="empty-state">Run a live search or choose another service.</div>`;
+    return;
+  }
+
   items.forEach((lead) => {
     const button = document.createElement("button");
     button.className = `lead-item ${lead.company_name === selectedLead.company_name ? "active" : ""}`;
     button.innerHTML = `
       <div class="lead-row">
         <div>
-          <div class="lead-name">${lead.company_name}</div>
-          <div class="lead-meta">${lead.location} · ${lead.industry}</div>
+          <div class="lead-name">${escapeHtml(lead.company_name)}</div>
+          <div class="lead-meta">${escapeHtml(lead.location)} · ${escapeHtml(lead.industry)}</div>
         </div>
-        <div class="score">${lead.lead_score}</div>
+        <div class="score">${escapeHtml(String(lead.lead_score))}</div>
       </div>
       <div class="tag-row">
-        <span class="tag">${lead.service_category}</span>
-        <span class="tag ${lead.urgency}">${lead.urgency} urgency</span>
-        <span class="tag">${lead.source_type}</span>
+        <span class="tag">${escapeHtml(lead.service_category)}</span>
+        <span class="tag ${escapeHtml(lead.urgency)}">${escapeHtml(lead.urgency)} urgency</span>
+        <span class="tag">${escapeHtml(lead.source_type)}</span>
       </div>
     `;
     button.addEventListener("click", () => {
@@ -159,39 +175,44 @@ function renderLeadList() {
 
 function renderDetail() {
   const lead = selectedLead;
+  if (!lead) {
+    leadDetail.innerHTML = `<div class="empty-state">Run a live search or choose a lead.</div>`;
+    return;
+  }
+
   const evidenceMarkup = lead.is_demo_source
     ? `<div class="demo-source">
         <strong>Demo evidence source</strong>
-        <span>${lead.source_url}</span>
+        <span>${escapeHtml(lead.source_url)}</span>
         <p>This is sample data for the prototype. Live reference links will appear here after a real search provider is connected.</p>
       </div>`
-    : `<a href="${lead.source_url}" target="_blank" rel="noreferrer">${lead.source_url}</a>`;
+    : `<a href="${escapeHtml(lead.source_url)}" target="_blank" rel="noreferrer">${escapeHtml(lead.source_url)}</a>`;
 
   leadDetail.innerHTML = `
     <div class="detail-stack">
       <div class="detail-title">
         <div>
-          <p class="eyebrow">${lead.service_category}</p>
-          <h2>${lead.company_name}</h2>
-          <p class="detail-meta">${lead.location} · ${lead.industry} · ${lead.company_size_estimate} employees</p>
+          <p class="eyebrow">${escapeHtml(lead.service_category)}</p>
+          <h2>${escapeHtml(lead.company_name)}</h2>
+          <p class="detail-meta">${escapeHtml(lead.location)} · ${escapeHtml(lead.industry)} · ${escapeHtml(lead.company_size_estimate)} employees</p>
         </div>
-        <div class="score">${lead.lead_score}</div>
+        <div class="score">${escapeHtml(String(lead.lead_score))}</div>
       </div>
 
       <div class="section">
         <h3>Intent Signal</h3>
-        <p>${lead.intent_signal}</p>
+        <p>${escapeHtml(lead.intent_signal)}</p>
       </div>
 
       <div class="section">
         <h3>Score Explanation</h3>
-        <p>${lead.score_explanation}</p>
+        <p>${escapeHtml(lead.score_explanation)}</p>
       </div>
 
       <div class="section">
         <h3>Decision-Maker Roles</h3>
         <div class="tag-row">
-          ${lead.recommended_roles.map((role) => `<span class="tag">${role}</span>`).join("")}
+          ${lead.recommended_roles.map((role) => `<span class="tag">${escapeHtml(role)}</span>`).join("")}
         </div>
       </div>
 
@@ -202,13 +223,27 @@ function renderDetail() {
 
       <div class="section">
         <h3>Outreach Draft</h3>
-        <p class="outreach">${lead.outreach_draft}</p>
+        <p class="outreach">${escapeHtml(lead.outreach_draft)}</p>
       </div>
     </div>
   `;
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function downloadCsv() {
+  if (leads.length === 0) {
+    setStatus("There are no leads to export yet.", "error");
+    return;
+  }
+
   const headers = Object.keys(leads[0]);
   const rows = leads.map((lead) =>
     headers.map((header) => `"${String(lead[header]).replaceAll('"', '""')}"`).join(",")
@@ -223,12 +258,40 @@ function downloadCsv() {
   URL.revokeObjectURL(url);
 }
 
+function setStatus(message, state = "neutral") {
+  statusBar.textContent = message;
+  statusBar.className = `status-bar ${state}`;
+}
+
+async function searchLiveLeads() {
+  const service = serviceFilter.value === "all" ? "Cloud Migration" : serviceFilter.value;
+  refreshButton.disabled = true;
+  setStatus(`Searching live web results for ${service}...`, "loading");
+
+  try {
+    const response = await fetch(`/api/search-leads?service=${encodeURIComponent(service)}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Live search failed.");
+    }
+
+    leads = data.leads;
+    selectedLead = leads[0] || null;
+    serviceFilter.value = service;
+    renderLeadList();
+    renderDetail();
+    setStatus(`Live Tavily search complete. ${leads.length} leads found for ${service}.`, "success");
+  } catch (error) {
+    setStatus(`Live search failed: ${error.message}`, "error");
+  } finally {
+    refreshButton.disabled = false;
+  }
+}
+
 serviceFilter.addEventListener("change", renderLeadList);
 exportButton.addEventListener("click", downloadCsv);
-refreshButton.addEventListener("click", () => {
-  renderLeadList();
-  renderDetail();
-});
+refreshButton.addEventListener("click", searchLiveLeads);
 
 initFilters();
 renderLeadList();
