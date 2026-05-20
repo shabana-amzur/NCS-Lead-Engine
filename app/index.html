@@ -18,10 +18,10 @@
         </div>
 
         <nav class="nav">
-          <a class="active" href="#dashboard">Dashboard</a>
-          <a href="#signals">Intent Signals</a>
-          <a href="#scoring">Scoring</a>
-          <a href="#exports">Exports</a>
+          <a class="active" href="#dashboard" data-nav-target="dashboard">Dashboard</a>
+          <a href="#signals" data-nav-target="signals">Intent Signals</a>
+          <a href="#scoring" data-nav-target="scoring">Scoring</a>
+          <a href="#exports" data-nav-target="exports">Exports</a>
         </nav>
 
         <div class="source-card">
@@ -30,7 +30,7 @@
         </div>
       </aside>
 
-      <main class="main">
+      <main class="main" id="dashboard">
         <header class="topbar">
           <div>
             <p class="eyebrow">NCS London</p>
@@ -48,7 +48,7 @@
           Demo mode is loaded. Click refresh to search for companies showing public buying-intent signals.
         </div>
 
-        <section class="metrics" aria-label="Lead metrics">
+        <section class="metrics" id="scoring" aria-label="Lead metrics">
           <article>
             <span>Qualified leads</span>
             <strong id="qualifiedCount">0</strong>
@@ -67,7 +67,7 @@
           </article>
         </section>
 
-        <section class="workspace">
+        <section class="workspace" id="signals">
           <div class="panel lead-panel">
             <div class="panel-header">
               <div>

@@ -103,6 +103,7 @@ const hotCount = document.querySelector("#hotCount");
 const exportButton = document.querySelector("#exportButton");
 const refreshButton = document.querySelector("#refreshButton");
 const statusBar = document.querySelector("#statusBar");
+const navLinks = document.querySelectorAll("[data-nav-target]");
 
 let selectedLead = leads[0];
 
@@ -263,6 +264,26 @@ function setStatus(message, state = "neutral") {
   statusBar.className = `status-bar ${state}`;
 }
 
+function setActiveNav(target) {
+  navLinks.forEach((link) => {
+    link.classList.toggle("active", link.dataset.navTarget === target);
+  });
+}
+
+function scrollToSection(target) {
+  if (target === "exports") {
+    downloadCsv();
+    setActiveNav(target);
+    return;
+  }
+
+  const section = document.querySelector(`#${target}`);
+  if (section) {
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    setActiveNav(target);
+  }
+}
+
 async function searchLiveLeads() {
   const service = serviceFilter.value === "all" ? "Cloud Migration" : serviceFilter.value;
   refreshButton.disabled = true;
@@ -296,6 +317,12 @@ async function searchLiveLeads() {
 serviceFilter.addEventListener("change", renderLeadList);
 exportButton.addEventListener("click", downloadCsv);
 refreshButton.addEventListener("click", searchLiveLeads);
+navLinks.forEach((link) => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    scrollToSection(link.dataset.navTarget);
+  });
+});
 
 initFilters();
 renderLeadList();
