@@ -52,6 +52,8 @@ The page includes:
 - Outreach draft
 - Browser-side CSV export
 
+The included leads are demo records. Their source URLs use reserved `.example` domains and are shown as non-clickable placeholders in the UI. Real clickable evidence links require connecting a live search provider.
+
 ### Run The Prototype Engine
 
 Generate sample qualified leads:

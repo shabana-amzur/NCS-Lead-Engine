@@ -342,6 +342,31 @@ select {
   border: 1px solid var(--line);
 }
 
+.demo-source {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid #d8e2eb;
+  border-radius: 8px;
+  background: #f7f9fb;
+}
+
+.demo-source strong {
+  color: var(--ink);
+}
+
+.demo-source span {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.demo-source p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 @media (max-width: 980px) {
   .shell,
   .workspace {
@@ -377,4 +402,3 @@ select {
     font-size: 30px;
   }
 }
-

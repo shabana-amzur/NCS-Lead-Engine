@@ -13,6 +13,7 @@ const leads = [
     recommended_roles: ["IT Director", "Database Manager", "Head of Data"],
     source_type: "Tender",
     source_url: "https://tenders.example/northbank-sql-performance-support",
+    is_demo_source: true,
     outreach_draft: "Hi, I noticed Northbank Finance Group appears to be reviewing SQL Server performance and resilience. NCS London helps UK businesses strengthen database operations, availability, and disaster recovery without slowing core teams. Would it be useful to compare priorities for the project?"
   },
   {
@@ -29,6 +30,7 @@ const leads = [
     recommended_roles: ["CTO", "IT Director", "Head of Infrastructure"],
     source_type: "Job Post",
     source_url: "https://jobs.example/arden-azure-migration-lead",
+    is_demo_source: true,
     outreach_draft: "Hi, I noticed Arden Manufacturing appears to be investing in Azure migration. NCS London supports UK businesses with cloud migration planning, delivery, and security review. Would it be useful to compare notes on where outside support could reduce delivery risk?"
   },
   {
@@ -45,6 +47,7 @@ const leads = [
     recommended_roles: ["Head of Data", "BI Manager", "Operations Director"],
     source_type: "Public Web",
     source_url: "https://news.example/marlow-retail-bi-programme",
+    is_demo_source: true,
     outreach_draft: "Hi, I noticed Marlow Retail Systems appears to be modernising Power BI reporting. NCS London helps teams turn operational data into reliable dashboards and decision-ready insight. Would a short conversation around the reporting roadmap be useful?"
   },
   {
@@ -61,6 +64,7 @@ const leads = [
     recommended_roles: ["Chief Data Officer", "Head of Data", "Operations Director"],
     source_type: "Company News",
     source_url: "https://press.example/cavendish-data-governance",
+    is_demo_source: true,
     outreach_draft: "Hi, I noticed Cavendish Care Services appears to be reviewing data governance and maturity. NCS London helps organisations assess data maturity and turn findings into practical improvement plans. Would it be useful to discuss how similar reviews are usually structured?"
   },
   {
@@ -77,6 +81,7 @@ const leads = [
     recommended_roles: ["CFO", "ERP Programme Manager", "IT Director"],
     source_type: "Job Post",
     source_url: "https://jobs.example/orchid-oracle-fusion-consultant",
+    is_demo_source: true,
     outreach_draft: "Hi, I noticed Orchid Logistics appears to be working on Oracle Fusion ERP support and integration. NCS London helps businesses stabilise ERP operations and connect finance and operational systems. Would it be useful to compare where additional support could help?"
   }
 ];
@@ -154,6 +159,14 @@ function renderLeadList() {
 
 function renderDetail() {
   const lead = selectedLead;
+  const evidenceMarkup = lead.is_demo_source
+    ? `<div class="demo-source">
+        <strong>Demo evidence source</strong>
+        <span>${lead.source_url}</span>
+        <p>This is sample data for the prototype. Live reference links will appear here after a real search provider is connected.</p>
+      </div>`
+    : `<a href="${lead.source_url}" target="_blank" rel="noreferrer">${lead.source_url}</a>`;
+
   leadDetail.innerHTML = `
     <div class="detail-stack">
       <div class="detail-title">
@@ -184,7 +197,7 @@ function renderDetail() {
 
       <div class="section">
         <h3>Evidence</h3>
-        <a href="${lead.source_url}" target="_blank" rel="noreferrer">${lead.source_url}</a>
+        ${evidenceMarkup}
       </div>
 
       <div class="section">
@@ -220,4 +233,3 @@ refreshButton.addEventListener("click", () => {
 initFilters();
 renderLeadList();
 renderDetail();
-
