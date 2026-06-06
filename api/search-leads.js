@@ -3,6 +3,7 @@ const SERVICE_RULES = {
     queries: [
       '"cloud migration" "United Kingdom" ("tender" OR "procurement" OR "RFP")',
       '"Azure migration" "UK" ("hiring" OR "required" OR "consultant")',
+      '"cloud migration" ("looking for" OR "need" OR "recommend") site:linkedin.com/posts "UK"',
       '"legacy infrastructure" "cloud migration" "UK" ("project" OR "programme")'
     ],
     serviceTerms: ["cloud migration", "azure migration", "legacy infrastructure", "cloud modernisation", "migrate to azure"],
@@ -13,6 +14,7 @@ const SERVICE_RULES = {
   "Database Management": {
     queries: [
       '"SQL Server" "UK" ("database support" OR "DBA" OR "performance issue")',
+      '"database support" ("looking for" OR "need" OR "recommend") site:linkedin.com/posts "UK"',
       '"database disaster recovery" "United Kingdom" ("tender" OR "support" OR "consultant")',
       '"Oracle DBA" "UK" ("urgent" OR "required" OR "support")'
     ],
@@ -24,6 +26,7 @@ const SERVICE_RULES = {
   "Power BI and Analytics": {
     queries: [
       '"Power BI consultant" "UK" ("required" OR "hiring" OR "tender")',
+      '"Power BI" ("looking for" OR "need" OR "recommend") site:linkedin.com/posts "UK"',
       '"business intelligence" "UK" ("dashboard" OR "reporting project" OR "consultant")',
       '"Power BI" "United Kingdom" ("implementation" OR "reporting transformation")'
     ],
@@ -35,6 +38,7 @@ const SERVICE_RULES = {
   "Data Maturity Assessment": {
     queries: [
       '"data maturity assessment" "UK" ("consultant" OR "review" OR "tender")',
+      '"data governance" ("looking for" OR "need" OR "recommend") site:linkedin.com/posts "UK"',
       '"data governance" "United Kingdom" ("review" OR "programme" OR "consultant")',
       '"data strategy" "UK" ("assessment" OR "maturity" OR "governance")'
     ],
@@ -46,6 +50,7 @@ const SERVICE_RULES = {
   "Oracle Fusion ERP": {
     queries: [
       '"Oracle Fusion ERP" "UK" ("implementation" OR "support" OR "consultant")',
+      '"Oracle Fusion" ("looking for" OR "need" OR "recommend") site:linkedin.com/posts "UK"',
       '"Oracle Fusion" "United Kingdom" ("integration" OR "migration" OR "partner")',
       '"Oracle ERP" "UK" ("tender" OR "procurement" OR "support required")'
     ],
@@ -57,6 +62,24 @@ const SERVICE_RULES = {
 };
 
 const DEFAULT_SERVICE = "Cloud Migration";
+const MARKET_RULES = {
+  all: {
+    label: "UK + UAE",
+    querySuffix: '("United Kingdom" OR "UK" OR "London" OR "Manchester" OR "Birmingham" OR "United Arab Emirates" OR "UAE" OR "Dubai" OR "Abu Dhabi" OR "Sharjah")',
+    country: ""
+  },
+  uk: {
+    label: "United Kingdom",
+    querySuffix: '("United Kingdom" OR "UK" OR "London" OR "Manchester" OR "Birmingham")',
+    country: "united kingdom"
+  },
+  uae: {
+    label: "United Arab Emirates",
+    querySuffix: '("United Arab Emirates" OR "UAE" OR "Dubai" OR "Abu Dhabi" OR "Sharjah")',
+    country: "united arab emirates"
+  }
+};
+
 const INTENT_TERMS = [
   "tender",
   "procurement",
@@ -100,6 +123,21 @@ const STRONG_INTENT_TERMS = [
   "implementation partner"
 ];
 
+const GENERIC_TITLE_TERMS = [
+  "contract",
+  "tender",
+  "rfp",
+  "request for proposal",
+  "job",
+  "vacancy",
+  "developer",
+  "consultant",
+  "partner",
+  "bids",
+  "government contracts",
+  "eprocurement"
+];
+
 const WEAK_RESULT_TERMS = [
   "what is",
   "guide",
@@ -133,6 +171,10 @@ function getRequestedServices(serviceName) {
   return SERVICE_RULES[serviceName] ? [serviceName] : [DEFAULT_SERVICE];
 }
 
+function getMarketConfig(market) {
+  return MARKET_RULES[market] || MARKET_RULES.all;
+}
+
 function includesAny(haystack, terms) {
   return terms.some((term) => haystack.includes(term));
 }
@@ -150,6 +192,23 @@ function getDomain(url) {
 }
 
 function titleToCompany(title, domain) {
+  const lowerTitle = title.toLowerCase();
+  const isGenericTitle = GENERIC_TITLE_TERMS.some((term) => lowerTitle.includes(term));
+  const isAggregator = [
+    "tenders",
+    "bid",
+    "jobs",
+    "indeed",
+    "linkedin",
+    "reed",
+    "totaljobs",
+    "contract"
+  ].some((term) => domain.includes(term));
+
+  if (isGenericTitle || isAggregator) {
+    return `${domain} (buyer to verify)`;
+  }
+
   const cleanTitle = title
     .replace(/\s[-|:]\s.*/, "")
     .replace(/\b(careers|jobs|vacancies|tenders|procurement)\b.*/i, "")
@@ -169,6 +228,7 @@ function titleToCompany(title, domain) {
 
 function sourceTypeFromUrl(url, title, content) {
   const haystack = `${url} ${title} ${content}`.toLowerCase();
+  if (haystack.includes("linkedin.com")) return "LinkedIn Signal";
   if (haystack.includes("tender") || haystack.includes("procurement") || haystack.includes("rfp")) return "Tender";
   if (haystack.includes("jobs") || haystack.includes("careers") || haystack.includes("hiring") || haystack.includes("vacancy")) return "Job Post";
   if (haystack.includes("news") || haystack.includes("press") || haystack.includes("announced")) return "Company News";
@@ -209,59 +269,107 @@ function qualifyResult(result, config) {
   };
 }
 
+function cleanSnippet(content) {
+  return String(content || "")
+    .replace(/\*\*/g, "")
+    .replace(/\\\*/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractDeadline(text) {
+  const cleanText = cleanSnippet(text);
+  const deadlinePatterns = [
+    /\b(?:deadline|closing date|closes|closing|apply by|submission deadline|bid deadline|tender closes)[:\s-]*([A-Z][a-z]+ \d{1,2},? \d{4})/i,
+    /\b(?:deadline|closing date|closes|closing|apply by|submission deadline|bid deadline|tender closes)[:\s-]*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i,
+    /\b(?:deadline|closing date|closes|closing|apply by|submission deadline|bid deadline|tender closes)[:\s-]*(\d{1,2}\s+[A-Z][a-z]+\s+\d{4})/i,
+    /\b(\d{1,2}\s+[A-Z][a-z]+\s+\d{4})\b/,
+    /\b([A-Z][a-z]+ \d{1,2},? \d{4})\b/
+  ];
+
+  for (const pattern of deadlinePatterns) {
+    const match = cleanText.match(pattern);
+    if (match?.[1]) {
+      return match[1].replace(/\s+/g, " ").trim();
+    }
+  }
+
+  return "No deadline found in source snippet";
+}
+
 function buildNeedStatement(serviceName, sourceType, intentMatches, content) {
   const signal = intentMatches.slice(0, 3).join(", ");
-  const trimmedContent = content.length > 260 ? `${content.slice(0, 257)}...` : content;
-  return `Need detected for ${serviceName}: ${sourceType.toLowerCase()} signal includes ${signal}. Evidence summary: ${trimmedContent}`;
+  return `Need detected for ${serviceName}: ${sourceType.toLowerCase()} signal includes ${signal}.`;
 }
 
 function buildLeadType(sourceType, leadScore) {
   if (sourceType === "Tender") return "Tender / procurement opportunity";
   if (sourceType === "Job Post") return "Hiring signal / capability gap";
+  if (sourceType === "LinkedIn Signal") return "LinkedIn public-post signal";
   if (sourceType === "Company News") return "Transformation or change signal";
   if (leadScore >= 85) return "High-intent public web signal";
   return "Potential public intent signal";
 }
 
 function buildRequirement(serviceName, sourceType, intentMatches, content) {
-  const evidenceSummary = content.length > 320 ? `${content.slice(0, 317)}...` : content;
+  const cleanContent = cleanSnippet(content);
+  const sourceDetail = cleanContent.length > 420 ? `${cleanContent.slice(0, 417)}...` : cleanContent;
   const matchedIntent = intentMatches.slice(0, 4).join(", ");
 
-  return `The source suggests a possible need for ${serviceName.toLowerCase()} support. The signal type is ${sourceType.toLowerCase()}, with buying-intent terms such as ${matchedIntent}. Evidence summary: ${evidenceSummary}`;
+  if (sourceType === "Tender") {
+    return `This appears to be a procurement opportunity for ${serviceName.toLowerCase()}. The source includes buying-intent terms such as ${matchedIntent}, which suggests an active requirement rather than general research. Review the tender page to confirm buyer name, scope, eligibility, submission steps, and commercial deadline. Source context: ${sourceDetail}`;
+  }
+
+  if (sourceType === "Job Post") {
+    return `This appears to be a hiring signal connected to ${serviceName.toLowerCase()}. The organisation may be trying to fill an internal skills gap, deliver a project, or increase technical capacity. NCS can approach this as a support or delivery augmentation opportunity rather than only a recruitment signal. Source context: ${sourceDetail}`;
+  }
+
+  if (sourceType === "LinkedIn Signal") {
+    return `This appears to be a public LinkedIn signal related to ${serviceName.toLowerCase()}. The post may indicate someone asking for recommendations, looking for a provider, discussing an active project, or highlighting a capability gap. Review the LinkedIn post before outreach to identify the person, company, and exact ask. Source context: ${sourceDetail}`;
+  }
+
+  return `This source suggests a possible requirement for ${serviceName.toLowerCase()} based on terms such as ${matchedIntent}. Treat it as a lead to verify: confirm the buyer, current project status, decision-maker, and whether NCS can help with advisory, delivery, or managed support. Source context: ${sourceDetail}`;
 }
 
-function buildApproachPlan(companyName, serviceName, sourceType, roles) {
+function buildApproachPlan(companyName, serviceName, sourceType, roles, deadline) {
   const primaryRoles = roles.slice(0, 2).join(" or ");
+  const urgencyStep = deadline === "No deadline found in source snippet"
+    ? "No deadline was visible in the search snippet, so check the evidence page first and prioritise if a closing date is listed there."
+    : `Prioritise this lead quickly because the source appears to mention this deadline/date: ${deadline}.`;
 
   return [
     `Verify the source first and confirm whether ${companyName} is the end customer, buyer, or publishing platform.`,
+    urgencyStep,
     `Approach ${primaryRoles || "the relevant technology decision-maker"} with a short message referencing the public ${sourceType.toLowerCase()} signal.`,
     `Lead with a practical offer: a 20-minute discovery call, quick risk review, or service-fit assessment for ${serviceName.toLowerCase()}.`,
     "Avoid over-claiming. Position NCS as a delivery partner that can reduce risk, fill capability gaps, and support the project team."
   ];
 }
 
-function buildLead(result, serviceName, config, qualification) {
+function buildLead(result, serviceName, config, qualification, marketLabel) {
   const domain = getDomain(result.url);
   const title = result.title || domain;
   const content = result.content || "Relevant public search result found for this service area.";
   const sourceType = sourceTypeFromUrl(result.url, title, content);
   const companyName = titleToCompany(title, domain);
+  const deadline = extractDeadline(`${title}. ${content}`);
   const leadType = buildLeadType(sourceType, qualification.leadScore);
   const requirement = buildRequirement(serviceName, sourceType, qualification.intentMatches, content);
   const ncsFit = config.ncsValue;
-  const approachPlan = buildApproachPlan(companyName, serviceName, sourceType, config.roles);
+  const approachPlan = buildApproachPlan(companyName, serviceName, sourceType, config.roles, deadline);
 
   return {
     company_name: companyName,
+    buyer_company: companyName,
     website: `https://${domain}`,
-    location: "United Kingdom",
+    location: marketLabel,
     industry: "To verify",
     company_size_estimate: "To verify",
     service_category: serviceName,
     lead_type: leadType,
     urgency: qualification.leadScore >= 85 ? "high" : "medium",
     lead_score: qualification.leadScore,
+    deadline,
     requirement,
     ncs_fit: ncsFit,
     approach_plan: approachPlan,
@@ -275,23 +383,28 @@ function buildLead(result, serviceName, config, qualification) {
   };
 }
 
-async function runTavilySearch(apiKey, query) {
+async function runTavilySearch(apiKey, query, marketConfig) {
+  const body = {
+    query: `${query} ${marketConfig.querySuffix}`,
+    search_depth: "basic",
+    topic: "general",
+    include_answer: false,
+    include_raw_content: false,
+    include_images: false,
+    max_results: 8
+  };
+
+  if (marketConfig.country) {
+    body.country = marketConfig.country;
+  }
+
   const tavilyResponse = await fetch("https://api.tavily.com/search", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${apiKey}`
     },
-    body: JSON.stringify({
-      query,
-      search_depth: "basic",
-      topic: "general",
-      country: "united kingdom",
-      include_answer: false,
-      include_raw_content: false,
-      include_images: false,
-      max_results: 8
-    })
+    body: JSON.stringify(body)
   });
 
   const data = await tavilyResponse.json();
@@ -306,14 +419,14 @@ async function runTavilySearch(apiKey, query) {
   return data.results || [];
 }
 
-async function searchService(apiKey, serviceName, customQuery, compact = false) {
+async function searchService(apiKey, serviceName, customQuery, marketConfig, compact = false) {
   const config = getServiceConfig(serviceName);
   const queries = customQuery
     ? [customQuery]
     : compact
       ? config.queries.slice(0, 2)
       : config.queries;
-  const resultGroups = await Promise.all(queries.map((query) => runTavilySearch(apiKey, query)));
+  const resultGroups = await Promise.all(queries.map((query) => runTavilySearch(apiKey, query, marketConfig)));
   const resultsByUrl = new Map();
 
   resultGroups.flat().forEach((result) => {
@@ -325,7 +438,7 @@ async function searchService(apiKey, serviceName, customQuery, compact = false) 
   const leads = [...resultsByUrl.values()]
     .map((result) => {
       const qualification = qualifyResult(result, config);
-      return qualification ? buildLead(result, serviceName, config, qualification) : null;
+      return qualification ? buildLead(result, serviceName, config, qualification, marketConfig.label) : null;
     })
     .filter(Boolean);
 
@@ -346,13 +459,15 @@ export default async function handler(request, response) {
   }
 
   const serviceName = String(request.query.service || "all");
+  const market = String(request.query.market || "all");
   const customQuery = request.query.query ? String(request.query.query) : "";
   const requestedServices = getRequestedServices(serviceName);
+  const marketConfig = getMarketConfig(market);
   const compactSearch = requestedServices.length > 1;
 
   try {
     const serviceSearches = await Promise.all(
-      requestedServices.map((name) => searchService(apiKey, name, customQuery, compactSearch))
+      requestedServices.map((name) => searchService(apiKey, name, customQuery, marketConfig, compactSearch))
     );
     const queries = serviceSearches.flatMap((search) => search.queries);
     const leadsByUrlAndService = new Map();
@@ -374,6 +489,7 @@ export default async function handler(request, response) {
       provider: "tavily",
       qualification_mode: "buying_intent_only",
       services: requestedServices,
+      market: marketConfig.label,
       leads
     });
   } catch (error) {

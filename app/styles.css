@@ -258,6 +258,13 @@ select {
   padding: 0 12px;
 }
 
+.filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .lead-list {
   display: grid;
 }
@@ -484,6 +491,11 @@ select {
   .panel-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .filter-controls,
+  .filter-controls select {
+    width: 100%;
   }
 
   .metrics {

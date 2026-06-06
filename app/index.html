@@ -74,9 +74,16 @@
                 <p class="eyebrow">Live Queue</p>
                 <h2>Qualified company signals</h2>
               </div>
-              <select id="serviceFilter" aria-label="Filter by service">
-                <option value="all">All services</option>
-              </select>
+              <div class="filter-controls">
+                <select id="serviceFilter" aria-label="Filter by service">
+                  <option value="all">All services</option>
+                </select>
+                <select id="marketFilter" aria-label="Filter by market">
+                  <option value="all">UK + UAE</option>
+                  <option value="uk">United Kingdom</option>
+                  <option value="uae">United Arab Emirates</option>
+                </select>
+              </div>
             </div>
             <div class="lead-list" id="leadList"></div>
           </div>

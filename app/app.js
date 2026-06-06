@@ -11,6 +11,7 @@ let leads = [];
 const leadList = document.querySelector("#leadList");
 const leadDetail = document.querySelector("#leadDetail");
 const serviceFilter = document.querySelector("#serviceFilter");
+const marketFilter = document.querySelector("#marketFilter");
 const qualifiedCount = document.querySelector("#qualifiedCount");
 const averageScore = document.querySelector("#averageScore");
 const hotCount = document.querySelector("#hotCount");
@@ -96,6 +97,8 @@ function renderDetail() {
   }
 
   const leadType = lead.lead_type || `${lead.source_type} lead`;
+  const buyerCompany = lead.buyer_company || lead.company_name || "Buyer to verify";
+  const deadline = lead.deadline || "No deadline found in source snippet";
   const requirement = lead.requirement || lead.intent_signal;
   const ncsFit = lead.ncs_fit || `NCS can support this opportunity through its ${lead.service_category} consulting, delivery, and managed services capability.`;
   const approachPlan = Array.isArray(lead.approach_plan) && lead.approach_plan.length
@@ -113,12 +116,16 @@ function renderDetail() {
         <div>
           <p class="eyebrow">${escapeHtml(lead.service_category)}</p>
           <h2>${escapeHtml(lead.company_name)}</h2>
-          <p class="detail-meta">${escapeHtml(lead.location)} · ${escapeHtml(lead.industry)} · ${escapeHtml(lead.company_size_estimate)} employees</p>
+          <p class="detail-meta">${escapeHtml(buyerCompany)} · ${escapeHtml(lead.location)} · ${escapeHtml(lead.industry)}</p>
         </div>
         <div class="score">${escapeHtml(String(lead.lead_score))}</div>
       </div>
 
       <div class="brief-grid">
+        <div class="brief-card">
+          <h3>Company / Buyer</h3>
+          <p>${escapeHtml(buyerCompany)}</p>
+        </div>
         <div class="brief-card">
           <h3>Lead Type</h3>
           <p>${escapeHtml(leadType)}</p>
@@ -126,6 +133,10 @@ function renderDetail() {
         <div class="brief-card">
           <h3>Service Fit</h3>
           <p>${escapeHtml(lead.service_category)} · ${escapeHtml(lead.source_type)} · ${escapeHtml(lead.urgency)} urgency</p>
+        </div>
+        <div class="brief-card">
+          <h3>Deadline</h3>
+          <p>${escapeHtml(deadline)}</p>
         </div>
       </div>
 
@@ -227,12 +238,18 @@ function scrollToSection(target) {
 
 async function searchLiveLeads() {
   const service = serviceFilter.value;
+  const market = marketFilter.value;
   const serviceLabel = service === "all" ? "all NCS services" : service;
+  const marketLabel = {
+    all: "UK and UAE",
+    uk: "United Kingdom",
+    uae: "United Arab Emirates"
+  }[market] || "UK and UAE";
   refreshButton.disabled = true;
-  setStatus(`Searching for public buying-intent signals across ${serviceLabel}...`, "loading");
+  setStatus(`Searching for public buying-intent signals across ${serviceLabel} in ${marketLabel}...`, "loading");
 
   try {
-    const response = await fetch(`/api/search-leads?service=${encodeURIComponent(service)}`);
+    const response = await fetch(`/api/search-leads?service=${encodeURIComponent(service)}&market=${encodeURIComponent(market)}`);
     const data = await response.json();
 
     if (!response.ok) {
@@ -245,9 +262,9 @@ async function searchLiveLeads() {
     renderLeadList();
     renderDetail();
     if (leads.length === 0) {
-      setStatus(`No qualified buying-intent leads found for ${serviceLabel}. Try another service or broaden the query later.`, "neutral");
+      setStatus(`No qualified buying-intent leads found for ${serviceLabel} in ${marketLabel}. Try another service or broaden the query later.`, "neutral");
     } else {
-      setStatus(`Live Tavily search complete. ${leads.length} qualified need signals found across ${serviceLabel}.`, "success");
+      setStatus(`Live Tavily search complete. ${leads.length} qualified need signals found across ${serviceLabel} in ${marketLabel}.`, "success");
     }
   } catch (error) {
     setStatus(`Live search failed: ${error.message}`, "error");
