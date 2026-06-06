@@ -7,6 +7,7 @@ const SERVICE_RULES = {
     ],
     serviceTerms: ["cloud migration", "azure migration", "legacy infrastructure", "cloud modernisation", "migrate to azure"],
     roles: ["CTO", "IT Director", "Head of Infrastructure"],
+    ncsValue: "NCS can help assess the current estate, plan the migration path, reduce delivery risk, and provide practical Azure/cloud migration support across architecture, security, and managed operations.",
     baseScore: 52
   },
   "Database Management": {
@@ -17,6 +18,7 @@ const SERVICE_RULES = {
     ],
     serviceTerms: ["sql server", "database support", "dba", "disaster recovery", "database performance", "oracle dba"],
     roles: ["IT Director", "Database Manager", "Head of Data"],
+    ncsValue: "NCS can support database health checks, performance tuning, DBA support, high availability, disaster recovery readiness, and managed database operations for SQL Server and Oracle environments.",
     baseScore: 54
   },
   "Power BI and Analytics": {
@@ -27,6 +29,7 @@ const SERVICE_RULES = {
     ],
     serviceTerms: ["power bi", "business intelligence", "dashboard", "reporting", "analytics"],
     roles: ["Head of Data", "BI Manager", "Operations Director"],
+    ncsValue: "NCS can help design reliable Power BI dashboards, improve reporting data models, integrate source systems, and turn operational data into decision-ready insight.",
     baseScore: 50
   },
   "Data Maturity Assessment": {
@@ -37,6 +40,7 @@ const SERVICE_RULES = {
     ],
     serviceTerms: ["data maturity", "data governance", "data strategy", "assessment", "data quality"],
     roles: ["Chief Data Officer", "Head of Data", "Operations Director"],
+    ncsValue: "NCS can run a data maturity assessment, identify governance and quality gaps, create a practical improvement roadmap, and help teams move from assessment into delivery.",
     baseScore: 50
   },
   "Oracle Fusion ERP": {
@@ -47,6 +51,7 @@ const SERVICE_RULES = {
     ],
     serviceTerms: ["oracle fusion", "oracle erp", "erp implementation", "erp support", "oracle integration"],
     roles: ["CFO", "ERP Programme Manager", "IT Director"],
+    ncsValue: "NCS can support Oracle Fusion ERP implementation, integration, stabilisation, reporting, and operational support across finance and business systems.",
     baseScore: 52
   }
 };
@@ -118,6 +123,14 @@ const WEAK_DOMAINS = [
 
 function getServiceConfig(serviceName) {
   return SERVICE_RULES[serviceName] || SERVICE_RULES[DEFAULT_SERVICE];
+}
+
+function getRequestedServices(serviceName) {
+  if (serviceName === "all") {
+    return Object.keys(SERVICE_RULES);
+  }
+
+  return SERVICE_RULES[serviceName] ? [serviceName] : [DEFAULT_SERVICE];
 }
 
 function includesAny(haystack, terms) {
@@ -202,12 +215,42 @@ function buildNeedStatement(serviceName, sourceType, intentMatches, content) {
   return `Need detected for ${serviceName}: ${sourceType.toLowerCase()} signal includes ${signal}. Evidence summary: ${trimmedContent}`;
 }
 
+function buildLeadType(sourceType, leadScore) {
+  if (sourceType === "Tender") return "Tender / procurement opportunity";
+  if (sourceType === "Job Post") return "Hiring signal / capability gap";
+  if (sourceType === "Company News") return "Transformation or change signal";
+  if (leadScore >= 85) return "High-intent public web signal";
+  return "Potential public intent signal";
+}
+
+function buildRequirement(serviceName, sourceType, intentMatches, content) {
+  const evidenceSummary = content.length > 320 ? `${content.slice(0, 317)}...` : content;
+  const matchedIntent = intentMatches.slice(0, 4).join(", ");
+
+  return `The source suggests a possible need for ${serviceName.toLowerCase()} support. The signal type is ${sourceType.toLowerCase()}, with buying-intent terms such as ${matchedIntent}. Evidence summary: ${evidenceSummary}`;
+}
+
+function buildApproachPlan(companyName, serviceName, sourceType, roles) {
+  const primaryRoles = roles.slice(0, 2).join(" or ");
+
+  return [
+    `Verify the source first and confirm whether ${companyName} is the end customer, buyer, or publishing platform.`,
+    `Approach ${primaryRoles || "the relevant technology decision-maker"} with a short message referencing the public ${sourceType.toLowerCase()} signal.`,
+    `Lead with a practical offer: a 20-minute discovery call, quick risk review, or service-fit assessment for ${serviceName.toLowerCase()}.`,
+    "Avoid over-claiming. Position NCS as a delivery partner that can reduce risk, fill capability gaps, and support the project team."
+  ];
+}
+
 function buildLead(result, serviceName, config, qualification) {
   const domain = getDomain(result.url);
   const title = result.title || domain;
   const content = result.content || "Relevant public search result found for this service area.";
   const sourceType = sourceTypeFromUrl(result.url, title, content);
   const companyName = titleToCompany(title, domain);
+  const leadType = buildLeadType(sourceType, qualification.leadScore);
+  const requirement = buildRequirement(serviceName, sourceType, qualification.intentMatches, content);
+  const ncsFit = config.ncsValue;
+  const approachPlan = buildApproachPlan(companyName, serviceName, sourceType, config.roles);
 
   return {
     company_name: companyName,
@@ -216,8 +259,12 @@ function buildLead(result, serviceName, config, qualification) {
     industry: "To verify",
     company_size_estimate: "To verify",
     service_category: serviceName,
+    lead_type: leadType,
     urgency: qualification.leadScore >= 85 ? "high" : "medium",
     lead_score: qualification.leadScore,
+    requirement,
+    ncs_fit: ncsFit,
+    approach_plan: approachPlan,
     intent_signal: buildNeedStatement(serviceName, sourceType, qualification.intentMatches, content),
     score_explanation: `Qualified because the source contains service terms (${qualification.serviceMatches.join(", ")}) and buying-intent terms (${qualification.intentMatches.slice(0, 5).join(", ")}).`,
     recommended_roles: config.roles,
@@ -259,6 +306,32 @@ async function runTavilySearch(apiKey, query) {
   return data.results || [];
 }
 
+async function searchService(apiKey, serviceName, customQuery, compact = false) {
+  const config = getServiceConfig(serviceName);
+  const queries = customQuery
+    ? [customQuery]
+    : compact
+      ? config.queries.slice(0, 2)
+      : config.queries;
+  const resultGroups = await Promise.all(queries.map((query) => runTavilySearch(apiKey, query)));
+  const resultsByUrl = new Map();
+
+  resultGroups.flat().forEach((result) => {
+    if (result.url && !resultsByUrl.has(result.url)) {
+      resultsByUrl.set(result.url, result);
+    }
+  });
+
+  const leads = [...resultsByUrl.values()]
+    .map((result) => {
+      const qualification = qualifyResult(result, config);
+      return qualification ? buildLead(result, serviceName, config, qualification) : null;
+    })
+    .filter(Boolean);
+
+  return { serviceName, queries, leads };
+}
+
 export default async function handler(request, response) {
   if (request.method !== "GET") {
     response.setHeader("Allow", "GET");
@@ -272,33 +345,35 @@ export default async function handler(request, response) {
     });
   }
 
-  const serviceName = String(request.query.service || DEFAULT_SERVICE);
-  const config = getServiceConfig(serviceName);
-  const queries = request.query.query ? [String(request.query.query)] : config.queries;
+  const serviceName = String(request.query.service || "all");
+  const customQuery = request.query.query ? String(request.query.query) : "";
+  const requestedServices = getRequestedServices(serviceName);
+  const compactSearch = requestedServices.length > 1;
 
   try {
-    const resultGroups = await Promise.all(queries.map((query) => runTavilySearch(apiKey, query)));
-    const resultsByUrl = new Map();
+    const serviceSearches = await Promise.all(
+      requestedServices.map((name) => searchService(apiKey, name, customQuery, compactSearch))
+    );
+    const queries = serviceSearches.flatMap((search) => search.queries);
+    const leadsByUrlAndService = new Map();
 
-    resultGroups.flat().forEach((result) => {
-      if (result.url && !resultsByUrl.has(result.url)) {
-        resultsByUrl.set(result.url, result);
+    serviceSearches.flatMap((search) => search.leads).forEach((lead) => {
+      const key = `${lead.service_category}:${lead.source_url}`;
+      const current = leadsByUrlAndService.get(key);
+      if (!current || lead.lead_score > current.lead_score) {
+        leadsByUrlAndService.set(key, lead);
       }
     });
 
-    const leads = [...resultsByUrl.values()]
-      .map((result) => {
-        const qualification = qualifyResult(result, config);
-        return qualification ? buildLead(result, serviceName, config, qualification) : null;
-      })
-      .filter(Boolean)
+    const leads = [...leadsByUrlAndService.values()]
       .sort((a, b) => b.lead_score - a.lead_score)
-      .slice(0, 10);
+      .slice(0, requestedServices.length > 1 ? 25 : 10);
 
     return response.status(200).json({
       queries,
       provider: "tavily",
       qualification_mode: "buying_intent_only",
+      services: requestedServices,
       leads
     });
   } catch (error) {

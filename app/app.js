@@ -6,93 +6,7 @@ const serviceNames = [
   "Oracle Fusion ERP"
 ];
 
-let leads = [
-  {
-    company_name: "Northbank Finance Group",
-    website: "https://northbank-finance.example",
-    location: "London, United Kingdom",
-    industry: "Financial Services",
-    company_size_estimate: "500-1000",
-    service_category: "Database Management",
-    urgency: "high",
-    lead_score: 91,
-    intent_signal: "Requesting SQL Server performance, high availability, and disaster recovery readiness support.",
-    score_explanation: "Strong database fit, tender signal, UK location, and recent public evidence.",
-    recommended_roles: ["IT Director", "Database Manager", "Head of Data"],
-    source_type: "Tender",
-    source_url: "https://tenders.example/northbank-sql-performance-support",
-    is_demo_source: true,
-    outreach_draft: "Hi, I noticed Northbank Finance Group appears to be reviewing SQL Server performance and resilience. NCS London helps UK businesses strengthen database operations, availability, and disaster recovery without slowing core teams. Would it be useful to compare priorities for the project?"
-  },
-  {
-    company_name: "Arden Manufacturing Ltd",
-    website: "https://arden-manufacturing.example",
-    location: "Birmingham, United Kingdom",
-    industry: "Manufacturing",
-    company_size_estimate: "250-500",
-    service_category: "Cloud Migration",
-    urgency: "high",
-    lead_score: 84,
-    intent_signal: "Seeking an Azure Migration Lead to support migration from legacy on-premise systems to Microsoft Azure.",
-    score_explanation: "Strong cloud migration fit, hiring signal, UK location, and recent public evidence.",
-    recommended_roles: ["CTO", "IT Director", "Head of Infrastructure"],
-    source_type: "Job Post",
-    source_url: "https://jobs.example/arden-azure-migration-lead",
-    is_demo_source: true,
-    outreach_draft: "Hi, I noticed Arden Manufacturing appears to be investing in Azure migration. NCS London supports UK businesses with cloud migration planning, delivery, and security review. Would it be useful to compare notes on where outside support could reduce delivery risk?"
-  },
-  {
-    company_name: "Marlow Retail Systems",
-    website: "https://marlow-retail.example",
-    location: "Manchester, United Kingdom",
-    industry: "Retail",
-    company_size_estimate: "100-250",
-    service_category: "Power BI and Analytics",
-    urgency: "medium",
-    lead_score: 79,
-    intent_signal: "Started a reporting modernisation programme to improve Power BI dashboards across operations.",
-    score_explanation: "Good analytics fit, public programme signal, UK location, and relevant operational reporting need.",
-    recommended_roles: ["Head of Data", "BI Manager", "Operations Director"],
-    source_type: "Public Web",
-    source_url: "https://news.example/marlow-retail-bi-programme",
-    is_demo_source: true,
-    outreach_draft: "Hi, I noticed Marlow Retail Systems appears to be modernising Power BI reporting. NCS London helps teams turn operational data into reliable dashboards and decision-ready insight. Would a short conversation around the reporting roadmap be useful?"
-  },
-  {
-    company_name: "Cavendish Care Services",
-    website: "https://cavendish-care.example",
-    location: "Leeds, United Kingdom",
-    industry: "Healthcare",
-    company_size_estimate: "250-500",
-    service_category: "Data Maturity Assessment",
-    urgency: "medium",
-    lead_score: 78,
-    intent_signal: "Announced a data governance and data maturity review to improve reporting, compliance, and operational insight.",
-    score_explanation: "Good data maturity fit with public company news and a clear business improvement theme.",
-    recommended_roles: ["Chief Data Officer", "Head of Data", "Operations Director"],
-    source_type: "Company News",
-    source_url: "https://press.example/cavendish-data-governance",
-    is_demo_source: true,
-    outreach_draft: "Hi, I noticed Cavendish Care Services appears to be reviewing data governance and maturity. NCS London helps organisations assess data maturity and turn findings into practical improvement plans. Would it be useful to discuss how similar reviews are usually structured?"
-  },
-  {
-    company_name: "Orchid Logistics",
-    website: "https://orchid-logistics.example",
-    location: "London, United Kingdom",
-    industry: "Logistics",
-    company_size_estimate: "100-250",
-    service_category: "Oracle Fusion ERP",
-    urgency: "medium",
-    lead_score: 76,
-    intent_signal: "Hiring for Oracle Fusion ERP support and integration work across finance and operations systems.",
-    score_explanation: "Relevant Oracle Fusion signal, UK location, and clear integration/support language.",
-    recommended_roles: ["CFO", "ERP Programme Manager", "IT Director"],
-    source_type: "Job Post",
-    source_url: "https://jobs.example/orchid-oracle-fusion-consultant",
-    is_demo_source: true,
-    outreach_draft: "Hi, I noticed Orchid Logistics appears to be working on Oracle Fusion ERP support and integration. NCS London helps businesses stabilise ERP operations and connect finance and operational systems. Would it be useful to compare where additional support could help?"
-  }
-];
+let leads = [];
 
 const leadList = document.querySelector("#leadList");
 const leadDetail = document.querySelector("#leadDetail");
@@ -105,7 +19,7 @@ const refreshButton = document.querySelector("#refreshButton");
 const statusBar = document.querySelector("#statusBar");
 const navLinks = document.querySelectorAll("[data-nav-target]");
 
-let selectedLead = leads[0];
+let selectedLead = null;
 
 function initFilters() {
   serviceNames.forEach((service) => {
@@ -137,8 +51,8 @@ function renderLeadList() {
   leadList.innerHTML = "";
 
   if (items.length === 0) {
-    leadList.innerHTML = `<div class="empty-list">No leads found for this service yet.</div>`;
-    leadDetail.innerHTML = `<div class="empty-state">Run a live search or choose another service.</div>`;
+    leadList.innerHTML = `<div class="empty-list">No live leads loaded yet. Click refresh to search across NCS service areas.</div>`;
+    leadDetail.innerHTML = `<div class="empty-state">Live Tavily results will appear here after search.</div>`;
     return;
   }
 
@@ -181,13 +95,17 @@ function renderDetail() {
     return;
   }
 
-  const evidenceMarkup = lead.is_demo_source
-    ? `<div class="demo-source">
-        <strong>Demo evidence source</strong>
-        <span>${escapeHtml(lead.source_url)}</span>
-        <p>This is sample data for the prototype. Live reference links will appear here after a real search provider is connected.</p>
-      </div>`
-    : `<a href="${escapeHtml(lead.source_url)}" target="_blank" rel="noreferrer">${escapeHtml(lead.source_url)}</a>`;
+  const leadType = lead.lead_type || `${lead.source_type} lead`;
+  const requirement = lead.requirement || lead.intent_signal;
+  const ncsFit = lead.ncs_fit || `NCS can support this opportunity through its ${lead.service_category} consulting, delivery, and managed services capability.`;
+  const approachPlan = Array.isArray(lead.approach_plan) && lead.approach_plan.length
+    ? lead.approach_plan
+    : [
+        "Review the evidence source before outreach.",
+        "Contact the most relevant decision-maker role listed below.",
+        "Reference the public signal briefly and offer a short discovery call."
+      ];
+  const evidenceMarkup = `<a href="${escapeHtml(lead.source_url)}" target="_blank" rel="noreferrer">${escapeHtml(lead.source_url)}</a>`;
 
   leadDetail.innerHTML = `
     <div class="detail-stack">
@@ -200,14 +118,32 @@ function renderDetail() {
         <div class="score">${escapeHtml(String(lead.lead_score))}</div>
       </div>
 
-      <div class="section">
-        <h3>Intent Signal</h3>
-        <p>${escapeHtml(lead.intent_signal)}</p>
+      <div class="brief-grid">
+        <div class="brief-card">
+          <h3>Lead Type</h3>
+          <p>${escapeHtml(leadType)}</p>
+        </div>
+        <div class="brief-card">
+          <h3>Service Fit</h3>
+          <p>${escapeHtml(lead.service_category)} · ${escapeHtml(lead.source_type)} · ${escapeHtml(lead.urgency)} urgency</p>
+        </div>
       </div>
 
       <div class="section">
-        <h3>Score Explanation</h3>
-        <p>${escapeHtml(lead.score_explanation)}</p>
+        <h3>Their Requirement</h3>
+        <p>${escapeHtml(requirement)}</p>
+      </div>
+
+      <div class="section">
+        <h3>What NCS Can Do</h3>
+        <p>${escapeHtml(ncsFit)}</p>
+      </div>
+
+      <div class="section">
+        <h3>How To Approach Them</h3>
+        <ol class="approach-list">
+          ${approachPlan.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}
+        </ol>
       </div>
 
       <div class="section">
@@ -218,13 +154,18 @@ function renderDetail() {
       </div>
 
       <div class="section">
+        <h3>Suggested Opening Message</h3>
+        <p class="outreach">${escapeHtml(lead.outreach_draft)}</p>
+      </div>
+
+      <div class="section">
         <h3>Evidence</h3>
         ${evidenceMarkup}
       </div>
 
-      <div class="section">
-        <h3>Outreach Draft</h3>
-        <p class="outreach">${escapeHtml(lead.outreach_draft)}</p>
+      <div class="section support-section">
+        <h3>Qualification Notes</h3>
+        <p>${escapeHtml(lead.score_explanation)}</p>
       </div>
     </div>
   `;
@@ -285,9 +226,10 @@ function scrollToSection(target) {
 }
 
 async function searchLiveLeads() {
-  const service = serviceFilter.value === "all" ? "Cloud Migration" : serviceFilter.value;
+  const service = serviceFilter.value;
+  const serviceLabel = service === "all" ? "all NCS services" : service;
   refreshButton.disabled = true;
-  setStatus(`Searching for public buying-intent signals for ${service}...`, "loading");
+  setStatus(`Searching for public buying-intent signals across ${serviceLabel}...`, "loading");
 
   try {
     const response = await fetch(`/api/search-leads?service=${encodeURIComponent(service)}`);
@@ -303,9 +245,9 @@ async function searchLiveLeads() {
     renderLeadList();
     renderDetail();
     if (leads.length === 0) {
-      setStatus(`No qualified buying-intent leads found for ${service}. Try another service or broaden the query later.`, "neutral");
+      setStatus(`No qualified buying-intent leads found for ${serviceLabel}. Try another service or broaden the query later.`, "neutral");
     } else {
-      setStatus(`Live Tavily search complete. ${leads.length} qualified need signals found for ${service}.`, "success");
+      setStatus(`Live Tavily search complete. ${leads.length} qualified need signals found across ${serviceLabel}.`, "success");
     }
   } catch (error) {
     setStatus(`Live search failed: ${error.message}`, "error");

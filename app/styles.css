@@ -380,6 +380,53 @@ select {
   line-height: 1.5;
 }
 
+.brief-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.brief-card {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7f9fb;
+}
+
+.brief-card h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.brief-card p {
+  color: var(--ink);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.approach-list {
+  margin: 0;
+  padding-left: 22px;
+  color: var(--ink);
+}
+
+.approach-list li {
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.approach-list li:last-child {
+  margin-bottom: 0;
+}
+
+.support-section p {
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .outreach {
   padding: 16px;
   border-radius: 8px;
@@ -445,5 +492,9 @@ select {
 
   h1 {
     font-size: 30px;
+  }
+
+  .brief-grid {
+    grid-template-columns: 1fr;
   }
 }
